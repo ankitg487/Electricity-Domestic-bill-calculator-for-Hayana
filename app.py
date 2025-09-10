@@ -41,7 +41,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     monthly_units = units / bill_days * 30
     category = None
 
-    # CATEGORY 1
     if load_kw <= 2 and monthly_units <= 100:
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
@@ -52,7 +51,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    # CATEGORY 2
     elif load_kw <= 5:
         category = "Category 2 (Upto 5 KW)"
         slab1_units = min(units, (150 / 30) * bill_days)
@@ -70,7 +68,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
             fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    # CATEGORY 3
     else:
         category = "Category 3 (Above 5 KW)"
         slab1_units = min(units, (500 / 30) * bill_days)
@@ -163,11 +160,10 @@ if st.button("⚡ Calculate Bill"):
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
-    # ------------------ FOOTER ------------------ #
-st.markdown("""
-<hr style='margin-top:40px;'>
-<div style='text-align: center; font-size: 16px; color: #555; font-family: "Segoe UI", sans-serif;'>
-    Created with ❤️ by <span style='color:#007bff; font-weight:bold;'>ANKIT GAUR</span>
-</div>
-""", unsafe_allow_html=True)
+
+    # ------------------ BILL BREAKOUT SECTION ------------------ #
+    st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
+
+    if result["Category"] == "Category 1 (Upto 2 KW & 100
+
 
