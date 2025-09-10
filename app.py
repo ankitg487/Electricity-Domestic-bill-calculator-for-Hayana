@@ -67,7 +67,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab_units = [slab1_units, slab2_units, slab3_units, slab4_units]
         slab_rates = [2.95, 5.25, 6.45, 7.10]
         slab_ranges = ["0-150 units", "151-300 units", "301-500 units", "501+ units"]
-        # Fixed charge only if slab3 or slab4 has units
         if slab3_units>0 or slab4_units>0:
             fixed = (load_kw*50/30)*bill_days
         else:
@@ -108,6 +107,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     surcharge = round((energy+fsa+fixed)*surcharge_rate,2)
     total = energy+fixed+fsa+mtax+ed+surcharge
 
+    # ---------- Return dictionary with consistent keys ----------
     return {
         "Category": category,
         "Units Consumed": round(units,2),
@@ -150,13 +150,12 @@ if st.button("⚡ Calculate Bill"):
 
     st.markdown(f"<p class='metric'>Surcharge Note: <span class='value'>{result['Surcharge Note']}</span></p>", unsafe_allow_html=True)
     st.markdown(f"<p class='metric'>Due Date: <span class='value'>{result['Due Date'].strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
-
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ---------- Bill Breakout Table ----------
     st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
     slab_table = "<table><tr><th>Slab</th><th>Unit Range</th><th>Units Consumed</th><th>Rate (₹/unit)</th><th>Amount (₹)</th></tr>"
-    for i, (r, u, rate, amt) in enumerate(zip(result['Slab_Ranges'], result['Slab_Units'], result['Slab_Rates'], result['Slab_Amounts'])):
+    for i, (r, u, rate, amt) in enumerate(zip(result['Slab Ranges'], result['Slab Units'], result['Slab Rates'], result['Slab Amounts'])):
         slab_table += f"<tr><td>Slab {i+1}</td><td>{r}</td><td>{u:.2f}</td><td>{rate:.2f}</td><td>{amt:.2f}</td></tr>"
     # Add other charges
     slab_table += f"<tr><td colspan='4'><b>Fixed Charges</b></td><td>{result['Fixed Charges']:.2f}</td></tr>"
