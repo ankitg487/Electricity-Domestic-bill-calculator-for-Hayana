@@ -36,12 +36,12 @@ def add_working_days(start_date, days):
     added_days = 0
     while added_days < days:
         current += timedelta(days=1)
-        if current.weekday() < 5:
+        if current.weekday() < 5:  # Monday–Friday only
             added_days += 1
     return current
 
 # ------------------ BILL CALCULATION ------------------ #
-def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
+def calculate_electricity_bill(units, bill_days, load_kw, bill_date, lpsc_date):
     monthly_units = units / bill_days * 30
     category = None
 
@@ -50,12 +50,11 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
         slab2_units = min(max(units - slab1_units, 0), (50 / 30) * bill_days)
-        slab3_units = max(units - slab1_units - slab2_units, 0)
-        slab_units = [slab1_units, slab2_units, slab3_units]
-        slab_rates = [2.20, 2.70, 0]
-        slab_ranges = ["0-50 units", "51-100 units", "101+ units"]
+        slab_units = [slab1_units, slab2_units]
+        slab_rates = [2.20, 2.70]
+        slab_ranges = ["0-50 units", "51-100 units"]
         fixed = 0.0
-        fsa = units*0.47 if monthly_units>200 else 0.0
+        fsa = units * 0.47 if monthly_units > 200 else 0.0
 
     # ---------- CATEGORY 2 ----------
     elif load_kw <= 5:
@@ -67,65 +66,61 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab_units = [slab1_units, slab2_units, slab3_units, slab4_units]
         slab_rates = [2.95, 5.25, 6.45, 7.10]
         slab_ranges = ["0-150 units", "151-300 units", "301-500 units", "501+ units"]
-        if slab3_units>0 or slab4_units>0:
-            fixed = (load_kw*50/30)*bill_days
+        if slab3_units > 0 or slab4_units > 0:
+            fixed = (load_kw * 50 / 30) * bill_days
         else:
             fixed = 0.0
-        fsa = units*0.47 if monthly_units>200 else 0.0
+        fsa = units * 0.47 if monthly_units > 200 else 0.0
 
     # ---------- CATEGORY 3 ----------
     else:
         category = "Category 3 (Above 5 KW)"
         slab1_units = min(units, (500 / 30) * bill_days)
-        slab2_units = min(max(units - slab1_units,0), (500 / 30) * bill_days)
-        slab3_units = max(units - slab1_units - slab2_units,0)
+        slab2_units = min(max(units - slab1_units, 0), (500 / 30) * bill_days)
+        slab3_units = max(units - slab1_units - slab2_units, 0)
         slab_units = [slab1_units, slab2_units, slab3_units]
-        slab_rates = [6.50,7.15,7.50]
+        slab_rates = [6.50, 7.15, 7.50]
         slab_ranges = ["0-500 units", "501-1000 units", "1001+ units"]
-        fixed = (load_kw*75/30)*bill_days
-        fsa = units*0.47 if monthly_units>200 else 0.0
+        fixed = (load_kw * 75 / 30) * bill_days
+        fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    slab_amounts = [round(s*u,2) for s,u in zip(slab_units, slab_rates)]
+    # ---------- Energy Calculation ----------
+    slab_amounts = [round(s * u, 2) for s, u in zip(slab_units, slab_rates)]
     energy = sum(slab_amounts)
 
-    # ---------- Other charges ----------
-    ed = round(units*0.10,2)
-    mtax = round((energy+fixed+fsa)*0.02,2)
+    # ---------- Other Charges ----------
+    ed = round(units * 0.10, 2)
+    mtax = round((energy + fixed + fsa) * 0.02, 2)
 
-    last_grace_date = add_working_days(due_date,10)
     today = date.today()
-    if today <= due_date:
-        surcharge_rate = 0.0
-        surcharge_note = "✅ No Surcharge (Paid Before Due Date)"
-    elif due_date < today <= last_grace_date:
-        surcharge_rate = 0.015
-        surcharge_note = "🕒 Grace Period Active (1.5% Surcharge)"
+    if today <= lpsc_date:
+        surcharge = 0.0
+        surcharge_note = f"✅ No Surcharge (Pay before {lpsc_date.strftime('%d-%m-%Y')})"
     else:
-        surcharge_rate = 0.03
-        surcharge_note = "⚠️ Late Payment (3% Surcharge Applied)"
+        surcharge = round((energy + fsa + fixed) * 0.03, 2)
+        surcharge_note = f"⚠️ Late Payment: 3% Surcharge applied (after {lpsc_date.strftime('%d-%m-%Y')})"
 
-    surcharge = round((energy+fsa+fixed)*surcharge_rate,2)
-    total = energy+fixed+fsa+mtax+ed+surcharge
+    total = energy + fixed + fsa + mtax + ed + surcharge
 
-    # ---------- Return dictionary with consistent keys ----------
+    # ---------- Return dictionary ----------
     return {
         "Category": category,
-        "Units Consumed": round(units,2),
+        "Units Consumed": round(units, 2),
         "Bill Days": bill_days,
         "Load (KW)": load_kw,
-        "Energy Charges": round(energy,2),
-        "Fixed Charges": round(fixed,2),
-        "FSA": round(fsa,2),
+        "Energy Charges": round(energy, 2),
+        "Fixed Charges": round(fixed, 2),
+        "FSA": round(fsa, 2),
         "M-Tax": mtax,
         "ED": ed,
         "Surcharge": surcharge,
         "Surcharge Note": surcharge_note,
-        "Total Bill": round(total,2),
+        "Total Bill": round(total, 2),
         "Slab Units": slab_units,
         "Slab Rates": slab_rates,
         "Slab Amounts": slab_amounts,
         "Slab Ranges": slab_ranges,
-        "Due Date": due_date
+        "LPSC Date": lpsc_date
     }
 
 # ------------------ STREAMLIT UI ------------------ #
@@ -133,10 +128,12 @@ units = st.number_input("Units Consumed", min_value=0.0, step=1.0, format="%.2f"
 load = st.number_input("Load (KW)", min_value=1.0, step=0.1, format="%.2f")
 days = st.number_input("Bill Days", min_value=1, step=1)
 bill_date = st.date_input("Bill Date", value=date.today())
-due_date = st.date_input("Due Date", value=date.today())
+
+# Auto LPSC Date (11 working days from bill date)
+lpsc_date = add_working_days(bill_date, 11)
 
 if st.button("⚡ Calculate Bill"):
-    result = calculate_electricity_bill(units, days, load, bill_date, due_date)
+    result = calculate_electricity_bill(units, days, load, bill_date, lpsc_date)
 
     # ---------- Bill Summary ----------
     st.markdown("<h3>📋 Bill Summary</h3>", unsafe_allow_html=True)
@@ -149,7 +146,7 @@ if st.button("⚡ Calculate Bill"):
             st.markdown(f"<p class='metric'>{key}: <span class='value'>{result[key]}</span></p>", unsafe_allow_html=True)
 
     st.markdown(f"<p class='metric'>Surcharge Note: <span class='value'>{result['Surcharge Note']}</span></p>", unsafe_allow_html=True)
-    st.markdown(f"<p class='metric'>Due Date: <span class='value'>{result['Due Date'].strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
+    st.markdown(f"<p class='metric'>LPSC Charge Date: <span class='value'>{result['LPSC Date'].strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ---------- Bill Breakout Table ----------
@@ -157,12 +154,12 @@ if st.button("⚡ Calculate Bill"):
     slab_table = "<table><tr><th>Slab</th><th>Unit Range</th><th>Units Consumed</th><th>Rate (₹/unit)</th><th>Amount (₹)</th></tr>"
     for i, (r, u, rate, amt) in enumerate(zip(result['Slab Ranges'], result['Slab Units'], result['Slab Rates'], result['Slab Amounts'])):
         slab_table += f"<tr><td>Slab {i+1}</td><td>{r}</td><td>{u:.2f}</td><td>{rate:.2f}</td><td>{amt:.2f}</td></tr>"
-    # Add other charges
+    # Other charges in breakout
     slab_table += f"<tr><td colspan='4'><b>Fixed Charges</b></td><td>{result['Fixed Charges']:.2f}</td></tr>"
     slab_table += f"<tr><td colspan='4'><b>FSA</b></td><td>{result['FSA']:.2f}</td></tr>"
-    slab_table += f"<tr><td colspan='4'><b>M-Tax</b></td><td>{result['M-Tax']:.2f}</td></tr>"
-    slab_table += f"<tr><td colspan='4'><b>ED</b></td><td>{result['ED']:.2f}</td></tr>"
-    slab_table += f"<tr><td colspan='4'><b>Surcharge</b></td><td>{result['Surcharge']:.2f}</td></tr>"
+    slab_table += f"<tr><td colspan='4'><b>M-Tax (2%)</b></td><td>{result['M-Tax']:.2f}</td></tr>"
+    slab_table += f"<tr><td colspan='4'><b>ED (0.10/unit)</b></td><td>{result['ED']:.2f}</td></tr>"
+    slab_table += f"<tr><td colspan='4'><b>Surcharge (3% if after {result['LPSC Date'].strftime('%d-%m-%Y')})</b></td><td>{result['Surcharge']:.2f}</td></tr>"
     slab_table += f"<tr><td colspan='4'><b>Total Bill</b></td><td>{result['Total Bill']:.2f}</td></tr>"
     slab_table += "</table>"
     st.markdown(slab_table, unsafe_allow_html=True)
