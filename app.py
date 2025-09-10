@@ -40,16 +40,17 @@ def add_working_days(start_date, days):
 def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     monthly_units = units / bill_days * 30
     category = None
-    rates = []
+
+    slab_units, slab_rates = [], []
 
     if load_kw <= 2 and monthly_units <= 100:
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
         slab2_units = min(max(units - slab1_units, 0), (50 / 30) * bill_days)
         slab3_units = max(units - slab1_units - slab2_units, 0)
-        rates = [2.20, 2.70, 0]
-        slab_amounts = [slab1_units * rates[0], slab2_units * rates[1], 0]
-        energy = sum(slab_amounts)
+        slab_units = [slab1_units, slab2_units, slab3_units]
+        slab_rates = [2.20, 2.70, 0.00]
+        energy = slab1_units * 2.20 + slab2_units * 2.70
         fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
@@ -59,9 +60,10 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab2_units = min(max(units - slab1_units, 0), (150 / 30) * bill_days)
         slab3_units = min(max(units - slab1_units - slab2_units, 0), (200 / 30) * bill_days)
         slab4_units = max(units - slab1_units - slab2_units - slab3_units, 0)
-        rates = [2.95, 5.25, 6.45, 7.10]
-        slab_amounts = [slab1_units*rates[0], slab2_units*rates[1], slab3_units*rates[2], slab4_units*rates[3]]
-        energy = sum(slab_amounts)
+        slab_units = [slab1_units, slab2_units, slab3_units, slab4_units]
+        slab_rates = [2.95, 5.25, 6.45, 7.10]
+        energy = (slab1_units*2.95 + slab2_units*5.25 +
+                  slab3_units*6.45 + slab4_units*7.10)
         fixed = (load_kw * 50 / 30) * bill_days
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
@@ -70,9 +72,10 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab1_units = min(units, (500 / 30) * bill_days)
         slab2_units = min(max(units - slab1_units, 0), (500 / 30) * bill_days)
         slab3_units = max(units - slab1_units - slab2_units, 0)
-        rates = [6.50, 7.15, 7.50]
-        slab_amounts = [slab1_units*rates[0], slab2_units*rates[1], slab3_units*rates[2]]
-        energy = sum(slab_amounts)
+        slab_units = [slab1_units, slab2_units, slab3_units]
+        slab_rates = [6.50, 7.15, 7.50]
+        energy = (slab1_units*6.50 + slab2_units*7.15 +
+                  slab3_units*7.50)
         fixed = (load_kw * 75 / 30) * bill_days
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
@@ -95,7 +98,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     surcharge = round((energy + fsa + fixed) * surcharge_rate, 2)
     total = energy + fixed + mtax + fsa + surcharge + ed
 
-    # return all slab info too
     return {
         "Category": category,
         "Units Consumed": round(units,2),
@@ -109,11 +111,9 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         "Surcharge": surcharge,
         "Surcharge Note": surcharge_note,
         "Total Bill": round(total,2),
+        "Due Date": due_date,
         "Grace Period Ends": last_grace_date,
-        "Slabs": {
-            "Units": [locals().get("slab1_units",0), locals().get("slab2_units",0), locals().get("slab3_units",0), locals().get("slab4_units",0)],
-            "Rates": rates
-        }
+        "Slabs": {"Units": slab_units, "Rates": slab_rates}
     }
 
 # ------------------ STREAMLIT UI ------------------ #
@@ -130,13 +130,19 @@ if st.button("⚡ Calculate Bill"):
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
     for key, value in result.items():
-        if key not in ["Category", "Grace Period Ends", "Surcharge Note", "Slabs"]:
+        if key not in ["Category", "Slabs", "Grace Period Ends", "Surcharge Note"]:
             if key in [
                 "Energy Charges", "Fixed Charges", "Municipal Tax (M-Tax)",
                 "FSA", "Electricity Duty (ED)", "Surcharge", "Total Bill"
             ]:
                 st.markdown(
                     f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>",
+                    unsafe_allow_html=True
+                )
+            elif key == "Due Date":
+                st.markdown(
+                    f"<p class='metric'>Due Date: <span class='value'>{value.strftime('%d-%m-%Y')} "
+                    f"(Grace Period Ends: {result['Grace Period Ends'].strftime('%d-%m-%Y')})</span></p>",
                     unsafe_allow_html=True
                 )
             else:
@@ -150,23 +156,70 @@ if st.button("⚡ Calculate Bill"):
                 f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>",
                 unsafe_allow_html=True
             )
-        elif key == "Grace Period Ends":
-            st.markdown(
-                f"<p class='metric'>Grace Period Ends On: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>",
-                unsafe_allow_html=True
-            )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ------------------ BILL BREAKOUT SECTION ------------------ #
-    st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>🔍 Detailed Bill Breakout</h3>", unsafe_allow_html=True)
 
+    st.markdown("""
+    <div style="background:#f8f9fa; padding:20px; border-radius:12px; 
+                box-shadow:2px 2px 8px rgba(0,0,0,0.1); margin-top:10px;">
+    <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+        <tr style="background-color:#007bff; color:white; text-align:center;">
+            <th style="padding:8px; border:1px solid #ddd;">Component</th>
+            <th style="padding:8px; border:1px solid #ddd;">Units</th>
+            <th style="padding:8px; border:1px solid #ddd;">Rate (₹)</th>
+            <th style="padding:8px; border:1px solid #ddd;">Amount (₹)</th>
+            <th style="padding:8px; border:1px solid #ddd;">Basis</th>
+        </tr>
+    """, unsafe_allow_html=True)
+
+    # Slabs rows
     slab_units = result["Slabs"]["Units"]
     slab_rates = result["Slabs"]["Rates"]
 
     for i, (u, r) in enumerate(zip(slab_units, slab_rates), 1):
         if u > 0:
-            st.markdown(f"- Slab {i}: ₹{r:.2f} × {u:.2f} units = ₹{u*r:.2f}")
+            st.markdown(f"""
+            <tr style="text-align:center;">
+                <td style="padding:8px; border:1px solid #ddd;">Slab {i}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{u:.2f}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{r:.2f}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{u*r:.2f}</td>
+                <td style="padding:8px; border:1px solid #ddd;">Units × Rate</td>
+            </tr>
+            """, unsafe_allow_html=True)
+
+    # Other components with basis
+    other_components = [
+        ("Fixed Charges", result['Fixed Charges'], f"₹50 × {result['Load (KW)']} × {result['Bill Days']}/30"),
+        ("FSA", result['FSA'], "Units × ₹0.47 (if >200 units)"),
+        ("Municipal Tax (M-Tax)", result['Municipal Tax (M-Tax)'], "2% of (Energy + Fixed + FSA)"),
+        ("Electricity Duty (ED)", result['Electricity Duty (ED)'], "₹0.10 × Units"),
+        ("Surcharge", result['Surcharge'], result['Surcharge Note'])
+    ]
+
+    for name, val, basis in other_components:
+        st.markdown(f"""
+        <tr style="text-align:center;">
+            <td style="padding:8px; border:1px solid #ddd;">{name}</td>
+            <td style="padding:8px; border:1px solid #ddd;">-</td>
+            <td style="padding:8px; border:1px solid #ddd;">-</td>
+            <td style="padding:8px; border:1px solid #ddd;">{val:.2f}</td>
+            <td style="padding:8px; border:1px solid #ddd;">{basis}</td>
+        </tr>
+        """, unsafe_allow_html=True)
+
+    # Total row highlighted
+    st.markdown(f"""
+    <tr style="background-color:#f0f0f0; font-weight:bold; text-align:center;">
+        <td style="padding:8px; border:1px solid #ddd;" colspan="4">➡️ Total Bill</td>
+        <td style="padding:8px; border:1px solid #ddd; color:#007bff;">₹{result['Total Bill']:.2f}</td>
+    </tr>
+    </table>
+    </div>
+    """, unsafe_allow_html=True)
 
     # ------------------ FOOTER ------------------ #
     st.markdown("""
@@ -175,6 +228,8 @@ if st.button("⚡ Calculate Bill"):
         Created by <b>ANKIT GAUR</b>
     </div>
     """, unsafe_allow_html=True)
+
+
 
 
 
