@@ -1,7 +1,5 @@
 import streamlit as st
 from datetime import date, timedelta
-from fpdf import FPDF
-import io
 
 # ------------------ PAGE CONFIG ------------------ #
 st.set_page_config(page_title="Electricity Bill Calculator", layout="centered")
@@ -42,13 +40,15 @@ def add_working_days(start_date, days):
 def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     monthly_units = units / bill_days * 30
     category = None
+    rates = []
 
     if load_kw <= 2 and monthly_units <= 100:
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
         slab2_units = min(max(units - slab1_units, 0), (50 / 30) * bill_days)
         slab3_units = max(units - slab1_units - slab2_units, 0)
-        slab_amounts = [slab1_units * 2.20, slab2_units * 2.70, 0]
+        rates = [2.20, 2.70, 0]
+        slab_amounts = [slab1_units * rates[0], slab2_units * rates[1], 0]
         energy = sum(slab_amounts)
         fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
@@ -95,6 +95,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     surcharge = round((energy + fsa + fixed) * surcharge_rate, 2)
     total = energy + fixed + mtax + fsa + surcharge + ed
 
+    # return all slab info too
     return {
         "Category": category,
         "Units Consumed": round(units,2),
@@ -108,7 +109,11 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         "Surcharge": surcharge,
         "Surcharge Note": surcharge_note,
         "Total Bill": round(total,2),
-        "Grace Period Ends": last_grace_date
+        "Grace Period Ends": last_grace_date,
+        "Slabs": {
+            "Units": [locals().get("slab1_units",0), locals().get("slab2_units",0), locals().get("slab3_units",0), locals().get("slab4_units",0)],
+            "Rates": rates
+        }
     }
 
 # ------------------ STREAMLIT UI ------------------ #
@@ -125,7 +130,7 @@ if st.button("⚡ Calculate Bill"):
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
     for key, value in result.items():
-        if key not in ["Category", "Grace Period Ends", "Surcharge Note"]:
+        if key not in ["Category", "Grace Period Ends", "Surcharge Note", "Slabs"]:
             if key in [
                 "Energy Charges", "Fixed Charges", "Municipal Tax (M-Tax)",
                 "FSA", "Electricity Duty (ED)", "Surcharge", "Total Bill"
@@ -153,30 +158,15 @@ if st.button("⚡ Calculate Bill"):
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-       # ------------------ BILL BREAKOUT SECTION ------------------ #
+    # ------------------ BILL BREAKOUT SECTION ------------------ #
     st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
 
-    if result["Category"] == "Category 1 (Upto 2 KW & 100 Units)":
-        st.markdown(f"""
-        - Slab 1: ₹2.20 × {slab1_units:.2f} units = ₹{slab1_units*2.20:.2f}  
-        - Slab 2: ₹2.70 × {slab2_units:.2f} units = ₹{slab2_units*2.70:.2f}  
-        - Slab 3: {slab3_units:.2f} units (No charge)  
-        """)
-    
-    elif result["Category"] == "Category 2 (Upto 5 KW)":
-        st.markdown(f"""
-        - Slab 1: ₹2.95 × {slab1_units:.2f} units = ₹{slab1_units*2.95:.2f}  
-        - Slab 2: ₹5.25 × {slab2_units:.2f} units = ₹{slab2_units*5.25:.2f}  
-        - Slab 3: ₹6.45 × {slab3_units:.2f} units = ₹{slab3_units*6.45:.2f}  
-        - Slab 4: ₹7.10 × {slab4_units:.2f} units = ₹{slab4_units*7.10:.2f}  
-        """)
+    slab_units = result["Slabs"]["Units"]
+    slab_rates = result["Slabs"]["Rates"]
 
-    elif result["Category"] == "Category 3 (Above 5 KW)":
-        st.markdown(f"""
-        - Slab 1: ₹6.50 × {slab1_units:.2f} units = ₹{slab1_units*6.50:.2f}  
-        - Slab 2: ₹7.15 × {slab2_units:.2f} units = ₹{slab2_units*7.15:.2f}  
-        - Slab 3: ₹7.50 × {slab3_units:.2f} units = ₹{slab3_units*7.50:.2f}  
-        """)
+    for i, (u, r) in enumerate(zip(slab_units, slab_rates), 1):
+        if u > 0:
+            st.markdown(f"- Slab {i}: ₹{r:.2f} × {u:.2f} units = ₹{u*r:.2f}")
 
     # ------------------ FOOTER ------------------ #
     st.markdown("""
@@ -185,6 +175,8 @@ if st.button("⚡ Calculate Bill"):
         Created by <b>ANKIT GAUR</b>
     </div>
     """, unsafe_allow_html=True)
+
+
 
 
 
