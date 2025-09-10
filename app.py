@@ -137,17 +137,35 @@ if st.button("⚡ Calculate Bill"):
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
     for key, value in result.items():
-        if key not in ["Category","Grace Period Ends","Surcharge Note"]:
-            st.markdown(f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>", unsafe_allow_html=True)
-        elif key == "Surcharge Note":
-            if "No Surcharge" in value:
-                color = "#28a745"
-            elif "Grace Period" in value:
-                color = "#ffc107"
-            else:
-                color = "#dc3545"
-            st.markdown(f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>", unsafe_allow_html=True)
-        elif key == "Grace Period Ends":
-            st.markdown(f"<p class='metric'>Grace Period Ends On: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+        
+    if key not in ["Category", "Grace Period Ends", "Surcharge Note"]:
+        # Show ₹ only for monetary fields
+        if key in [
+            "Energy Charges", "Fixed Charges", "Municipal Tax (M-Tax)",
+            "FSA", "Electricity Duty (ED)", "Surcharge", "Total Bill"
+        ]:
+            st.markdown(
+                f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<p class='metric'>{key}: <span class='value'>{value}</span></p>",
+                unsafe_allow_html=True
+            )
+    elif key == "Surcharge Note":
+        if "No Surcharge" in value:
+            color = "#28a745"
+        elif "Grace Period" in value:
+            color = "#ffc107"
+        else:
+            color = "#dc3545"
+        st.markdown(
+            f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>",
+            unsafe_allow_html=True
+        )
+    elif key == "Grace Period Ends":
+        st.markdown(
+            f"<p class='metric'>Grace Period Ends On: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>",
+            unsafe_allow_html=True
+        )
