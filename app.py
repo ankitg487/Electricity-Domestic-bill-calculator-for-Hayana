@@ -163,3 +163,11 @@ if st.button("⚡ Calculate Bill"):
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
+    # ------------------ FOOTER ------------------ #
+st.markdown("""
+<hr style='margin-top:40px;'>
+<div style='text-align: center; font-size: 16px; color: #555; font-family: "Segoe UI", sans-serif;'>
+    Created with ❤️ by <span style='color:#007bff; font-weight:bold;'>ANKIT GAUR</span>
+</div>
+""", unsafe_allow_html=True)
+
