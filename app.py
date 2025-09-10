@@ -1,5 +1,7 @@
 import streamlit as st
 from datetime import date, timedelta
+from fpdf import FPDF
+import io
 
 # ------------------ PAGE CONFIG ------------------ #
 st.set_page_config(page_title="Electricity Bill Calculator", layout="centered")
@@ -60,12 +62,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         rates = [2.95, 5.25, 6.45, 7.10]
         slab_amounts = [slab1_units*rates[0], slab2_units*rates[1], slab3_units*rates[2], slab4_units*rates[3]]
         energy = sum(slab_amounts)
-        if slab3_units > 0:
-            fixed = (load_kw * 50 * 12 / 365) * bill_days
-        elif slab4_units > 0:
-            fixed = (load_kw * 50 / 30) * bill_days
-        else:
-            fixed = 0.0
+        fixed = (load_kw * 50 / 30) * bill_days
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
     else:
@@ -143,12 +140,7 @@ if st.button("⚡ Calculate Bill"):
                     unsafe_allow_html=True
                 )
         elif key == "Surcharge Note":
-            if "No Surcharge" in value:
-                color = "#28a745"
-            elif "Grace Period" in value:
-                color = "#ffc107"
-            else:
-                color = "#dc3545"
+            color = "#28a745" if "No Surcharge" in value else "#ffc107" if "Grace Period" in value else "#dc3545"
             st.markdown(
                 f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>",
                 unsafe_allow_html=True
@@ -164,6 +156,10 @@ if st.button("⚡ Calculate Bill"):
     # ------------------ BILL BREAKOUT SECTION ------------------ #
     st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
 
-    if result["Category"] == "Category 1 (Upto 2 KW & 100
+    if result["Category"] == "Category 1 (Upto 2 KW & 100 Units)":
+        st.markdown(f"""
+        - Slab 1: ₹2.20 × {(50/30)*days:.2f} units  
+        - Slab 2: ₹2.70 × {(50/30)*days
+
 
 
