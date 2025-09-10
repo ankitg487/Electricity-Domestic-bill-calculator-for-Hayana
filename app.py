@@ -18,6 +18,7 @@ p, div, label { font-family: 'Segoe UI', sans-serif; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
 th { background-color: #007bff; color: white; }
+tr:nth-child(even) { background-color: #f2f2f2; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -66,7 +67,8 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab_units = [slab1_units, slab2_units, slab3_units, slab4_units]
         slab_rates = [2.95, 5.25, 6.45, 7.10]
         slab_ranges = ["0-150 units", "151-300 units", "301-500 units", "501+ units"]
-        if slab3_units>0:
+        # Fixed charge only if slab3 or slab4 has units
+        if slab3_units>0 or slab4_units>0:
             fixed = (load_kw*50/30)*bill_days
         else:
             fixed = 0.0
@@ -141,7 +143,10 @@ if st.button("⚡ Calculate Bill"):
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
     for key in ["Units Consumed","Bill Days","Load (KW)","Energy Charges","Fixed Charges","FSA","M-Tax","ED","Surcharge","Total Bill"]:
-        st.markdown(f"<p class='metric'>{key}: <span class='value'>₹{result[key]:.2f}</span></p>", unsafe_allow_html=True) if "Charges" in key or key=="Total Bill" else st.markdown(f"<p class='metric'>{key}: <span class='value'>{result[key]}</span></p>", unsafe_allow_html=True)
+        if key in ["Energy Charges","Fixed Charges","FSA","M-Tax","ED","Surcharge","Total Bill"]:
+            st.markdown(f"<p class='metric'>{key}: <span class='value'>₹{result[key]:.2f}</span></p>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<p class='metric'>{key}: <span class='value'>{result[key]}</span></p>", unsafe_allow_html=True)
 
     st.markdown(f"<p class='metric'>Surcharge Note: <span class='value'>{result['Surcharge Note']}</span></p>", unsafe_allow_html=True)
     st.markdown(f"<p class='metric'>Due Date: <span class='value'>{result['Due Date'].strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
@@ -153,6 +158,7 @@ if st.button("⚡ Calculate Bill"):
     slab_table = "<table><tr><th>Slab</th><th>Unit Range</th><th>Units Consumed</th><th>Rate (₹/unit)</th><th>Amount (₹)</th></tr>"
     for i, (r, u, rate, amt) in enumerate(zip(result['Slab_Ranges'], result['Slab_Units'], result['Slab_Rates'], result['Slab_Amounts'])):
         slab_table += f"<tr><td>Slab {i+1}</td><td>{r}</td><td>{u:.2f}</td><td>{rate:.2f}</td><td>{amt:.2f}</td></tr>"
+    # Add other charges
     slab_table += f"<tr><td colspan='4'><b>Fixed Charges</b></td><td>{result['Fixed Charges']:.2f}</td></tr>"
     slab_table += f"<tr><td colspan='4'><b>FSA</b></td><td>{result['FSA']:.2f}</td></tr>"
     slab_table += f"<tr><td colspan='4'><b>M-Tax</b></td><td>{result['M-Tax']:.2f}</td></tr>"
@@ -164,26 +170,3 @@ if st.button("⚡ Calculate Bill"):
 
     # ---------- Footer ----------
     st.markdown("<hr><div style='text-align:center; font-size:14px; color:gray;'>Created by <b>ANKIT GAUR</b></div>", unsafe_allow_html=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
