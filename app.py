@@ -153,13 +153,40 @@ if st.button("⚡ Calculate Bill"):
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ------------------ BILL BREAKOUT SECTION ------------------ #
+       # ------------------ BILL BREAKOUT SECTION ------------------ #
     st.markdown("<h3>🔍 Bill Breakout</h3>", unsafe_allow_html=True)
 
     if result["Category"] == "Category 1 (Upto 2 KW & 100 Units)":
         st.markdown(f"""
-        - Slab 1: ₹2.20 × {(50/30)*days:.2f} units  
-        - Slab 2: ₹2.70 × {(50/30)*days
+        - Slab 1: ₹2.20 × {slab1_units:.2f} units = ₹{slab1_units*2.20:.2f}  
+        - Slab 2: ₹2.70 × {slab2_units:.2f} units = ₹{slab2_units*2.70:.2f}  
+        - Slab 3: {slab3_units:.2f} units (No charge)  
+        """)
+    
+    elif result["Category"] == "Category 2 (Upto 5 KW)":
+        st.markdown(f"""
+        - Slab 1: ₹2.95 × {slab1_units:.2f} units = ₹{slab1_units*2.95:.2f}  
+        - Slab 2: ₹5.25 × {slab2_units:.2f} units = ₹{slab2_units*5.25:.2f}  
+        - Slab 3: ₹6.45 × {slab3_units:.2f} units = ₹{slab3_units*6.45:.2f}  
+        - Slab 4: ₹7.10 × {slab4_units:.2f} units = ₹{slab4_units*7.10:.2f}  
+        """)
+
+    elif result["Category"] == "Category 3 (Above 5 KW)":
+        st.markdown(f"""
+        - Slab 1: ₹6.50 × {slab1_units:.2f} units = ₹{slab1_units*6.50:.2f}  
+        - Slab 2: ₹7.15 × {slab2_units:.2f} units = ₹{slab2_units*7.15:.2f}  
+        - Slab 3: ₹7.50 × {slab3_units:.2f} units = ₹{slab3_units*7.50:.2f}  
+        """)
+
+    # ------------------ FOOTER ------------------ #
+    st.markdown("""
+    <hr>
+    <div style='text-align:center; font-size:14px; color:gray;'>
+        Created by <b>ANKIT GAUR</b>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
 
 
