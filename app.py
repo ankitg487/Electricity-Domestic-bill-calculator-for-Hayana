@@ -41,7 +41,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     monthly_units = units / bill_days * 30
     category = None
 
-    # ---------------- CATEGORY 1 ---------------- #
+    # CATEGORY 1
     if load_kw <= 2 and monthly_units <= 100:
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
@@ -52,7 +52,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    # ---------------- CATEGORY 2 ---------------- #
+    # CATEGORY 2
     elif load_kw <= 5:
         category = "Category 2 (Upto 5 KW)"
         slab1_units = min(units, (150 / 30) * bill_days)
@@ -70,7 +70,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
             fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    # ---------------- CATEGORY 3 ---------------- #
+    # CATEGORY 3
     else:
         category = "Category 3 (Above 5 KW)"
         slab1_units = min(units, (500 / 30) * bill_days)
@@ -82,13 +82,9 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         fixed = (load_kw * 75 / 30) * bill_days
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
-    # ---------------- Electricity Duty (ED) ---------------- #
     ed = round(units * 0.10, 2)
-
-    # ---------------- M-Tax ---------------- #
     mtax = round((energy + fixed + fsa) * 0.02, 2)
 
-    # ---------------- Surcharge ---------------- #
     last_grace_date = add_working_days(due_date, 10)
     today = date.today()
 
@@ -103,8 +99,6 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         surcharge_note = "⚠️ Late Payment (3% Surcharge Applied)"
 
     surcharge = round((energy + fsa + fixed) * surcharge_rate, 2)
-
-    # ---------------- Total ---------------- #
     total = energy + fixed + mtax + fsa + surcharge + ed
 
     return {
@@ -137,35 +131,35 @@ if st.button("⚡ Calculate Bill"):
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
     for key, value in result.items():
-        
-    if key not in ["Category", "Grace Period Ends", "Surcharge Note"]:
-        # Show ₹ only for monetary fields
-        if key in [
-            "Energy Charges", "Fixed Charges", "Municipal Tax (M-Tax)",
-            "FSA", "Electricity Duty (ED)", "Surcharge", "Total Bill"
-        ]:
+        if key not in ["Category", "Grace Period Ends", "Surcharge Note"]:
+            if key in [
+                "Energy Charges", "Fixed Charges", "Municipal Tax (M-Tax)",
+                "FSA", "Electricity Duty (ED)", "Surcharge", "Total Bill"
+            ]:
+                st.markdown(
+                    f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f"<p class='metric'>{key}: <span class='value'>{value}</span></p>",
+                    unsafe_allow_html=True
+                )
+        elif key == "Surcharge Note":
+            if "No Surcharge" in value:
+                color = "#28a745"
+            elif "Grace Period" in value:
+                color = "#ffc107"
+            else:
+                color = "#dc3545"
             st.markdown(
-                f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>",
+                f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>",
                 unsafe_allow_html=True
             )
-        else:
+        elif key == "Grace Period Ends":
             st.markdown(
-                f"<p class='metric'>{key}: <span class='value'>{value}</span></p>",
+                f"<p class='metric'>Grace Period Ends On: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>",
                 unsafe_allow_html=True
             )
-    elif key == "Surcharge Note":
-        if "No Surcharge" in value:
-            color = "#28a745"
-        elif "Grace Period" in value:
-            color = "#ffc107"
-        else:
-            color = "#dc3545"
-        st.markdown(
-            f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>",
-            unsafe_allow_html=True
-        )
-    elif key == "Grace Period Ends":
-        st.markdown(
-            f"<p class='metric'>Grace Period Ends On: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>",
-            unsafe_allow_html=True
-        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
