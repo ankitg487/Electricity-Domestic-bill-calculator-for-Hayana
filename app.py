@@ -95,17 +95,17 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     mtax = round((energy + fixed + fsa) * 0.02, 2)
 
     # ---------------- Surcharge ---------------- #
-    last_grace_date = due_date
+    grace_end = add_working_days(due_date, 10)
     today = date.today()
-    if today < due_date:
+    if today <= due_date:
         surcharge_rate = 0.0
-        surcharge_note = "Due date not reached"
-    elif due_date <= today <= add_working_days(due_date, 10):
+        surcharge_note = "No Surcharge (Paid Before Due Date)"
+    elif due_date < today <= grace_end:
         surcharge_rate = 0.015
-        surcharge_note = "Within Grace Period (1.5% Surcharge)"
+        surcharge_note = "Grace Period Active (1.5% Surcharge)"
     else:
         surcharge_rate = 0.03
-        surcharge_note = "Late Payment Surcharge Applied (3%)"
+        surcharge_note = "Late Payment (3% Surcharge Applied)"
 
     surcharge = round((energy + fsa + fixed) * surcharge_rate, 2)
 
@@ -125,7 +125,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         "Surcharge": surcharge,
         "Surcharge Note": surcharge_note,
         "Total Bill": round(total,2),
-        "Due / Grace End Date": last_grace_date,
+        "Due / Grace End Date": grace_end,
         "Slab Units": slab_units,
         "Slab Rates": slab_rates,
         "Surcharge Rate": surcharge_rate
@@ -141,6 +141,7 @@ due_date = st.date_input("Due Date", value=date.today())
 if st.button("⚡ Calculate Bill"):
     result = calculate_electricity_bill(units, days, load, bill_date, due_date)
 
+    # ------------------ BILL SUMMARY ------------------ #
     st.markdown("<h3>📋 Bill Summary</h3>", unsafe_allow_html=True)
     st.markdown(f"<div class='bill-card'><h4>{result['Category']}</h4>", unsafe_allow_html=True)
 
@@ -148,7 +149,7 @@ if st.button("⚡ Calculate Bill"):
         if key not in ["Category","Due / Grace End Date","Surcharge Note","Slab Units","Slab Rates","Surcharge Rate"]:
             st.markdown(f"<p class='metric'>{key}: <span class='value'>₹{value:.2f}</span></p>", unsafe_allow_html=True)
         elif key == "Surcharge Note":
-            color = "#28a745" if "Within Grace" in value else "#dc3545"
+            color = "#28a745" if "No Surcharge" in value else "#ffc107" if "Grace" in value else "#dc3545"
             st.markdown(f"<p class='metric'>{key}: <span class='value' style='color:{color}'>{value}</span></p>", unsafe_allow_html=True)
         elif key == "Due / Grace End Date":
             st.markdown(f"<p class='metric'>Due / Grace End Date: <span class='value'>{value.strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
@@ -164,18 +165,19 @@ if st.button("⚡ Calculate Bill"):
             rate = result["Slab Rates"][i]
             components.append({
                 "Component":f"Slab {i+1} Energy",
-                "Calculation Base":"Units × Rate",
+                "Units Consumed":round(units_count,2),
                 "Rate":rate,
-                "Amount (₹)":round(units_count*rate,2)
+                "Amount (₹)":round(units_count*rate,2),
+                "Calculation Base":"Units × Rate"
             })
 
     components.extend([
-        {"Component":"Fixed Charges","Calculation Base":"Load × Rate × Days","Rate":"-","Amount (₹)":result["Fixed Charges"]},
-        {"Component":"FSA","Calculation Base":"Units × 0.47 if units>200 else 0","Rate":"0.47","Amount (₹)":result["FSA"]},
-        {"Component":"M-Tax","Calculation Base":"(Energy + Fixed + FSA) × 2%","Rate":"2%","Amount (₹)":result["Municipal Tax (M-Tax)"]},
-        {"Component":"Electricity Duty (ED)","Calculation Base":"Units × 0.10","Rate":"0.10","Amount (₹)":result["Electricity Duty (ED)"]},
-        {"Component":f"Surcharge ({int(result['Surcharge Rate']*100)}%)","Calculation Base":"(Energy+FSA+Fixed) × Rate","Rate":"-","Amount (₹)":result["Surcharge"]},
-        {"Component":"Total Bill","Calculation Base":"Sum of all components","Rate":"-","Amount (₹)":result["Total Bill"]}
+        {"Component":"Fixed Charges","Units Consumed":"-","Rate":"-","Amount (₹)":result["Fixed Charges"],"Calculation Base":"Load × Rate × Days"},
+        {"Component":"FSA","Units Consumed":"-","Rate":"0.47","Amount (₹)":result["FSA"],"Calculation Base":"Units × 0.47 if units>200 else 0"},
+        {"Component":"M-Tax","Units Consumed":"-","Rate":"2%","Amount (₹)":result["Municipal Tax (M-Tax)"],"Calculation Base":"(Energy+Fixed+FSA) × 2%"},
+        {"Component":"Electricity Duty (ED)","Units Consumed":"-","Rate":"0.10","Amount (₹)":result["Electricity Duty (ED)"],"Calculation Base":"Units × 0.10"},
+        {"Component":f"Surcharge ({int(result['Surcharge Rate']*100)}%)","Units Consumed":"-","Rate":"-","Amount (₹)":result["Surcharge"],"Calculation Base":"(Energy+FSA+Fixed) × Rate"},
+        {"Component":"Total Bill","Units Consumed":"-","Rate":"-","Amount (₹)":result["Total Bill"],"Calculation Base":"Sum of all components"}
     ])
 
     df = pd.DataFrame(components)
@@ -190,6 +192,8 @@ if st.button("⚡ Calculate Bill"):
         Created by <b>ANKIT GAUR</b>
     </div>
     """, unsafe_allow_html=True)
+
+
 
 
 
