@@ -40,9 +40,9 @@ def add_working_days(start_date, days):
 # ------------------ BILL CALCULATION FUNCTION ------------------ #
 def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
     monthly_units = units / bill_days * 30
+    slab_units, slab_rates = [], []
 
     # ------------------ CATEGORY LOGIC ------------------ #
-    slab_units, slab_rates = [], []
     if load_kw <= 2 and monthly_units <= 100:
         category = "Category 1 (Upto 2 KW & 100 Units)"
         slab1_units = min(units, (50 / 30) * bill_days)
@@ -63,7 +63,8 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, due_date):
         slab_units = [slab1_units, slab2_units, slab3_units, slab4_units]
         slab_rates = [2.95, 5.25, 6.45, 7.10]
         energy = sum([u*r for u,r in zip(slab_units, slab_rates)])
-        fixed = (load_kw * 50 / 30) * bill_days
+        # Fixed charge only if units > 300
+        fixed = (load_kw * 50 / 30) * bill_days if units > 300 else 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
     else:
@@ -160,16 +161,15 @@ if st.button("⚡ Calculate Bill"):
 
     # Other charges
     components += [
-        {"Component": "Fixed Charges", "Base": f"{result['Load (KW)']} KW × {'₹50' if result['Category']!='Category 3 (Above 5 KW)' else '₹75'} /KW", "Rate": "-", "Amount (₹)": result["Fixed Charges"]},
+        {"Component": "Fixed Charges", "Base": f"{result['Load (KW)']} KW × {'₹50' if result['Category']=='Category 2 (Upto 5 KW)' else '₹75'} /KW", "Rate": "-", "Amount (₹)": result["Fixed Charges"]},
         {"Component": "FSA", "Base": f"{result['Units Consumed']} × ₹0.47 (if >200 units)", "Rate":"-","Amount (₹)":result["FSA"]},
         {"Component": "Electricity Duty", "Base": f"{result['Units Consumed']} × 10%", "Rate":"-","Amount (₹)":result["Electricity Duty (ED)"]},
         {"Component": "Municipal Tax (M-Tax)", "Base": "(Energy+Fixed+FSA) × 2%", "Rate":"-","Amount (₹)":result["Municipal Tax (M-Tax)"]},
-        {"Component": "Surcharge", "Base": f"(Energy+Fixed+FSA) × {result['Surcharge Rate']*100:.1f}%", "Rate":"-","Amount (₹)":result["Surcharge"]},
-        {"Component": "Total Bill", "Base":"","Rate":"","Amount (₹)":result["Total Bill"]}
+        {"Component": f"Surcharge ({int(result['Surcharge Rate']*100)}%)", "Base":"(Energy+Fixed+FSA) × Surcharge%", "Rate":"-","Amount (₹)":result["Surcharge"]}
     ]
 
     df = pd.DataFrame(components)
-    st.dataframe(df, use_container_width=True)
+    st.table(df)
 
     # ------------------ FOOTER ------------------ #
     st.markdown("""
@@ -178,6 +178,7 @@ if st.button("⚡ Calculate Bill"):
         Created by <b>ANKIT GAUR</b>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
