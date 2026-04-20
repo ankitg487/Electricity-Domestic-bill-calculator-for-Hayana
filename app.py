@@ -129,8 +129,8 @@ load = st.number_input("Load (KW)", min_value=1.0, step=0.1, format="%.2f")
 days = st.number_input("Bill Days", min_value=1, step=1)
 bill_date = st.date_input("Bill Date", value=date.today())
 
-# Auto LPSC Date (11 working days from bill date)
-lpsc_date = add_working_days(bill_date, 11)
+# Auto LPSC Date (8 working days from bill date)
+lpsc_date = add_working_days(bill_date, 8)
 
 if st.button("⚡ Calculate Bill"):
     result = calculate_electricity_bill(units, days, load, bill_date, lpsc_date)
