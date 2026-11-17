@@ -40,8 +40,7 @@ st.markdown("""
     font-size: 18px;
     font-weight: bold;
     animation:
-        scroll-left 15s linear infinite,
-        blink-text 1.2s ease-in-out infinite;
+        scroll-left 15s linear infinite;
 }
 </style>
 
