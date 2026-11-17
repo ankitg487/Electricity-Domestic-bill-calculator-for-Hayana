@@ -24,9 +24,26 @@ tr:nth-child(even) { background-color: #f2f2f2; }
 
 # ------------------ HEADER ------------------ #
 st.markdown("""
-<div style='text-align: center; padding: 15px; background-color: #f0f8ff; border-radius: 10px;'>
-    <h2>हरियाणा बिजली वितरण निगम ⚡</h2>
-    <p>यहाँ आप घरेलू श्रेणी का बिजली बिल आसानी से कैलकुलेट कर सकते हैं।</p>
+<div style='
+    text-align:center;
+    padding:18px;
+    background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+    border-radius:12px;
+    color:white;
+    box-shadow:0 6px 15px rgba(0,0,0,0.3);
+'>
+    <h2 style='margin:0;color:#ffffff;'>
+        ⚡ हरियाणा बिजली वितरण निगम ⚡
+    </h2>
+
+    <marquee scrollamount="6" style='
+        margin-top:10px;
+        color:#FFD700;
+        font-size:18px;
+        font-weight:bold;
+    '>
+        🙏 यहाँ आप घरेलू श्रेणी का बिजली बिल आसानी से कैलकुलेट कर सकते हैं। हमारी वेबसाइट पर आने के लिए आपका हार्दिक धन्यवाद। 🙏
+    </marquee>
 </div>
 """, unsafe_allow_html=True)
 
