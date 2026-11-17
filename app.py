@@ -193,13 +193,4 @@ if st.button("⚡ Calculate Bill"):
 
     # ---------- Footer ----------
  st.markdown("""
-<hr>
-<div style='text-align:center; font-size:14px; color:gray;'>
-    <p style='margin:0 0 8px 0;'>
-        ⚠️ <b>अस्वीकरण:</b> यह एक अनौपचारिक (Unofficial) कैलकुलेटर है। यह केवल आपके द्वारा दर्ज किए गए इनपुट के आधार पर बिल का अनुमान लगाता है। वास्तविक बिल इससे अलग हो सकता है।
-    </p>
-    Created by <b>ANKIT GAUR</b>
-</div>
-""", unsafe_allow_html=True)
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<hr><div style='text-align:center; font-size:14px; color:gray;'><p style='margin:0 0 8px 0;'>⚠️ <b>अस्वीकरण:</b> यह एक अनौपचारिक (Unofficial) कैलकुलेटर है। यह केवल आपके द्वारा दर्ज किए गए इनपुट के आधार पर बिल का अनुमान लगाता है। वास्तविक बिल इससे अलग हो सकता है।</p>Created by <b>ANKIT GAUR</b></div>", unsafe_allow_html=True)
