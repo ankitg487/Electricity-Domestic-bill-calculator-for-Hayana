@@ -67,7 +67,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, lpsc_date):
         slab_rates = [2.95, 5.25, 6.45, 7.10]
         slab_ranges = ["0-150 units", "151-300 units", "301-500 units", "501+ units"]
         if slab3_units > 0 or slab4_units > 0:
-            fixed = (load_kw * 50 / 30) * bill_days
+            fixed = ((load_kw *360/365) * 50 / 30) * bill_days
         else:
             fixed = 0.0
         fsa = units * 0.47 if monthly_units > 200 else 0.0
@@ -81,7 +81,7 @@ def calculate_electricity_bill(units, bill_days, load_kw, bill_date, lpsc_date):
         slab_units = [slab1_units, slab2_units, slab3_units]
         slab_rates = [6.50, 7.15, 7.50]
         slab_ranges = ["0-500 units", "501-1000 units", "1001+ units"]
-        fixed = (load_kw * 75 / 30) * bill_days
+        fixed = ((load_kw *360/365) * 75 / 30) * bill_days
         fsa = units * 0.47 if monthly_units > 200 else 0.0
 
     # ---------- Energy Calculation ----------
